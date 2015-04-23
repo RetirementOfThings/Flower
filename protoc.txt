@@ -1,0 +1,33 @@
+
+alarm:
+	server -> beacon
+		alarm
+		start bipping and squirming :D
+	beacon -> server
+		alarm
+		should start overall alarm; happens when someone pushed 'alarm' button
+
+set:
+	comp -> server
+		set:reminder:hh:mm:ss
+		used for setting reminders for elderly
+
+do:
+	server -> beacon
+		do:remind
+		beacon should start reminding
+
+clear:
+	beacon -> server
+		clear
+		sent to server when elderly accepts reminder
+	server -> beacon
+		clear
+		sent to the rest of beacons, so that theyy stop reminding
+
+movement:
+	beacon -> server
+		movement:y
+		sent when beacon senses motion
+		movement:n
+		sent when beacon haven't sensed motion in last 5 min.
