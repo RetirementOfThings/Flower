@@ -1,5 +1,10 @@
-import sys
-import mosquito
+import mosquitto
+
+
+def alarm(beacon_channels):
+	for channel in beacon_channels:
+		pass
+	pass
 
 
 def on_connect(mqttc, obj, rc):
@@ -23,13 +28,14 @@ def on_log(mqttc, obj, level, string):
 
 
 def main():
+    beacons = {}  # chanel:movement
     mqttc = mosquitto.Mosquitto() 
     mqttc.on_message = on_message
     mqttc.on_connect = on_connect
     mqttc.on_publish = on_publish
     mqttc.on_subscribe = on_subscribe
     mqttc.connect("127.0.0.1", 1883, 60)
-    mqttc.subscribe("dadadadada", 0)
+    mqttc.subscribe("flower/#", 0)
     mqttc.loop_forever()
 
 
