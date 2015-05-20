@@ -2,13 +2,13 @@
 alarm:
 	server -> beacon
 		alarm
-		start bipping and squirming :D
+		start beeping and squirming :D
 	beacon -> server
 		alarm
-		should start overall alarm; happens when someone pushed 'alarm' button
+		should start overall alarm; happens when someone pushes 'alarm' button
 
 set:
-	comp -> server
+	manager -> server
 		set:reminder:hh:mm:ss
 		used for setting reminders for elderly
 

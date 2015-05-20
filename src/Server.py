@@ -1,4 +1,5 @@
 import mosquitto
+import copernicus
 
 
 def alarm(beacon_channels):
@@ -8,7 +9,7 @@ def alarm(beacon_channels):
 
 
 def on_connect(mqttc, obj, rc):
-    print('on connetc')
+    print('on connect')
 
 
 def on_message(mqttc, obj, msg):
