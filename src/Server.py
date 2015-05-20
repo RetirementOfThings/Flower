@@ -1,5 +1,4 @@
-import sys
-import mosquito
+import mosquitto
 
 
 def on_connect(mqttc, obj, rc):
