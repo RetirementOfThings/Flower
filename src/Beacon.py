@@ -1,7 +1,13 @@
+import json
+import sys
+from copernicus import Copernicus
 import mosquitto
 
 
 should_remind = True
+mqttc = None
+api = None
+config = dict()
 
 
 def alarm():
@@ -21,12 +27,13 @@ def stop_reminding():
 
 
 def on_connect(mqttc, obj, rc):
-    print('on connetc')
+    print 'Beacon {0} connected'.format(config['beacon_topic'])
+    mqttc.publish(config['server_topic'], 'movement:y')
 
 
 def on_message(mqttc, obj, msg):
     print(msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
-    protoc = msg.split(':').strip()
+    protoc = map(lambda s: s.strip(), msg.split(':'))
     if protoc[0] == 'alarm':
         alarm()
     elif protoc[0] == 'do':
@@ -35,47 +42,49 @@ def on_message(mqttc, obj, msg):
         stop_reminding()
 
 
-def on_publish(mqttc, obj, mid):
-    print("mid: "+str(mid))
-
-
-def on_subscribe(mqttc, obj, mid, granted_qos):
-    print("Subscribed: "+str(mid)+" "+str(granted_qos))
-
-
-def on_log(mqttc, obj, level, string):
-    print(string)
-
-
 def button_handler(state):
     if state:
         print 'alarm'
         alarm()
-        mqttc.publish("flower/1", 'alarm', 0, True)
+        mqttc.publish(config['server_topic'], 'alarm', 0, True)
 
 
 def button_handler2(state):
     if state:
         stop_reminding()
-        mqttc.publish("flower/1", 'clear', 0, True)
+        mqttc.publish(config['server_topic'], 'clear', 0, True)
 
 
 def knob_handler(pos):
-    mqttc.publish("flower/1", 'movement:y', 0, True)
+    mqttc.publish(config['server_topic'], 'movement:y', 0, True)
 
 
 def main():
+    global mqttc
+    global api
+    global config
+
+    with open(sys.argv[1]) as config_file:
+        for key, value in json.load(config_file).iteritems():
+            if type(value) is unicode:
+                config[key] = value.encode('ascii', 'ignore')
+            else:
+                config[key] = value
+
     mqttc = mosquitto.Mosquitto() 
     mqttc.on_message = on_message
     mqttc.on_connect = on_connect
-    mqttc.on_publish = on_publish
-    mqttc.on_subscribe = on_subscribe
-    mqttc.connect("127.0.0.1", 1883, 60)
-    mqttc.subscribe("flower/1", 0)
+    mqttc.connect(config['broker_ip'], 1883, 60)
+    mqttc.subscribe(config['beacon_topic'], 0)
+
+    mqttc.will_set(config['server_topic'], 'goodbye')
+
+    api = Copernicus()
     api.set_handler('button1', button_handler)
     api.set_handler('button2', button_handler2)
     api.set_handler('knob', knob_handler)
     api.command('subscribe', 'knob')
+
     mqttc.loop_forever()
 
 

@@ -9,25 +9,35 @@ alarm:
 
 set:
 	manager -> server
-		set:reminder:hh:mm:ss
+		set:reminder:hh:mm
 		used for setting reminders for elderly
+
+unset:
+	manager -> server
+	    unset:reminder
+	    clears previously set reminder
 
 do:
 	server -> beacon
-		do:remind
+		do:reminder
 		beacon should start reminding
 
 clear:
 	beacon -> server
 		clear
-		sent to server when elderly accepts reminder
-	server -> beacon
+		sent to server when elderly dismisses reminder
+    server -> beacon
 		clear
-		sent to the rest of beacons, so that theyy stop reminding
+		sent to the rest of beacons, so that they stop reminding
 
 movement:
 	beacon -> server
 		movement:y
 		sent when beacon senses motion
 		movement:n
-		sent when beacon haven't sensed motion in last 5 min.
+		sent when beacon hasn't sensed motion in last 5 min.
+
+goodbye:
+    beacon -> server
+        goodbye
+        sent when beacon goes offline

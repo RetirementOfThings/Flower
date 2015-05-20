@@ -1,0 +1,5 @@
+{
+  "broker_ip": "127.0.0.1",
+  "beacon_topic": "beacon/1",
+  "server_topic": "server/beacon/1"
+}
