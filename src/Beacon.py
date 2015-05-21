@@ -1,5 +1,7 @@
 import json
 import sys
+import thread
+import time
 from copernicus import Copernicus
 import mosquitto
 
@@ -8,22 +10,37 @@ should_remind = True
 mqttc = None
 api = None
 config = dict()
+listen_loop = True
 
 
 def alarm():
-    print 'alarm'
+    global listen_loop
+    api.command('led', True)
+    listen_loop = False
+    val = 0
+    while True:
+        val = 31 - val
+        api.command('servo', val)
+        time.sleep(0.5)
 
 
-def remind():
+def remind(reminder):
     global should_remind
-    while should_remind:
-        print 'take your pill'
-    print 'thank you for taking your pill'
+    global listen_loop
+    print 'Reminder: "{0}"'.format(reminder)
+    listen_loop = False
+    api.command('rgb', 'green')
+    listen_loop = True
 
 
 def stop_reminding():
     global should_remind
+    global listen_loop
     should_remind = False
+    print 'Reminder dismissed.'
+    listen_loop = False
+    api.command('rgb', 'off')
+    listen_loop = True
 
 
 def on_connect(mqttc, obj, rc):
@@ -33,30 +50,34 @@ def on_connect(mqttc, obj, rc):
 
 def on_message(mqttc, obj, msg):
     print(msg.topic+" "+str(msg.qos)+" "+str(msg.payload))
-    protoc = map(lambda s: s.strip(), msg.split(':'))
+    protoc = map(lambda s: s.strip(), msg.payload.split(':'))
     if protoc[0] == 'alarm':
         alarm()
     elif protoc[0] == 'do':
-        remind()
+        remind(protoc[1])
     elif protoc[0] == 'clear':
         stop_reminding()
 
 
 def button_handler(state):
     if state:
-        print 'alarm'
-        alarm()
-        mqttc.publish(config['server_topic'], 'alarm', 0, True)
+        mqttc.publish(config['server_topic'], 'alarm')
 
 
 def button_handler2(state):
     if state:
-        stop_reminding()
-        mqttc.publish(config['server_topic'], 'clear', 0, True)
+        mqttc.publish(config['server_topic'], 'clear')
 
 
 def knob_handler(pos):
-    mqttc.publish(config['server_topic'], 'movement:y', 0, True)
+    if pos < 12:
+        mqttc.publish(config['server_topic'], 'movement:y')
+
+
+def serial_thread():
+    while True:
+        if listen_loop:
+            api.listen()
 
 
 def main():
@@ -80,10 +101,13 @@ def main():
     mqttc.will_set(config['server_topic'], 'goodbye')
 
     api = Copernicus()
+    api.command('led', False)
     api.set_handler('button1', button_handler)
     api.set_handler('button2', button_handler2)
     api.set_handler('knob', knob_handler)
-    api.command('subscribe', 'knob')
+    api.command('subscribe', '*')
+
+    thread.start_new_thread(serial_thread, ())
 
     mqttc.loop_forever()
 

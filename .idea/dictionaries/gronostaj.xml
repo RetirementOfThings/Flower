@@ -2,6 +2,7 @@
   <dictionary name="gronostaj">
     <words>
       <w>mqttc</w>
+      <w>protoc</w>
     </words>
   </dictionary>
 </component>

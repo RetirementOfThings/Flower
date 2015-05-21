@@ -2,5 +2,6 @@
   "broker_ip": "127.0.0.1",
   "beacon_prefix": "beacon",
   "server_topic": "server",
-  "reminder_timeout": 1
+  "reminder_timeout": 1,
+  "movement_timeout": 2
 }

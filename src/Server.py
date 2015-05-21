@@ -3,9 +3,8 @@ import time
 import json
 import sys
 import thread
-import re
-import mosquitto
 
+import mosquitto
 
 mqttc = None
 config = dict()
@@ -14,6 +13,7 @@ reminders = dict()
 pending = None
 
 beacons = set()
+last_movement = None
 
 
 def to_beacon_topic(server_topic):
@@ -46,6 +46,9 @@ def remind(name):
 def dismiss_reminder():
     global pending
     pending = None
+    for beacon in beacons:
+        mqttc.publish(beacon, 'clear')
+        print '--> ' + beacon
 
 
 def sound_alarm():
@@ -56,11 +59,13 @@ def sound_alarm():
 
 
 def update_movement(beacon_topic, moving):
+    global last_movement
     beacon_topic = to_beacon_topic(beacon_topic)
     beacons.add(beacon_topic)
     print '{0}:{1} movement'.format(beacon_topic, '' if moving else ' no')
     if not moving:
         sound_alarm()
+    last_movement = 0
 
 
 def drop_beacon(topic):
@@ -71,7 +76,7 @@ def drop_beacon(topic):
 
 # noinspection PyUnusedLocal
 def on_connect(mqttc_, obj, rc):
-    print 'Server {0} connected'.format(config['server_topic'])
+    print 'Server "{0}" connected'.format(config['server_topic'])
 
 
 # noinspection PyUnusedLocal
@@ -96,6 +101,7 @@ def on_message(mqttc_, obj, msg):
 
 def minute_thread():
     global pending
+    global last_movement
     while True:
         if pending is None:
             time_tuple = datetime.datetime.now().timetuple()[3:5]
@@ -108,6 +114,10 @@ def minute_thread():
             pending += 1
             if pending >= config['reminder_timeout']:
                 pending = None
+                sound_alarm()
+        if last_movement is not None:
+            last_movement += 1
+            if last_movement >= config['movement_timeout']:
                 sound_alarm()
         time.sleep(60)
 
